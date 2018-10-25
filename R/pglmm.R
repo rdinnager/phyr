@@ -237,6 +237,11 @@
 #' @param Ntrials Only used if \code{bayes = TRUE} and \code{family = "binomial"} or 
 #'   \code{"zeroinflated.binomial"}. A vector of integers, specifying the number of trials
 #'   for each response value (which should be the number of "successes").
+#' @param save_joint Boolean. Only used if \code{bayes = TRUE}. Should information about the joint
+#' posterior be saved when running the \code{INLA} model? This can add considerably to the object
+#' size but will allow for drawing samples from an approximate joint posterior using 
+#' \code{\link{phyr::sample_posterior}}.
+#' @param ... Any other parameter to be passed on the \code{inla} if \code{bayes = TRUE}
 #' @return An object (list) of class \code{communityPGLMM} with the following elements:
 #' \item{formula}{the formula for fixed effects}
 #' \item{formula_original}{the formula for both fixed effects and random effects}
@@ -496,7 +501,8 @@ communityPGLMM <- function(formula, data = NULL, family = "gaussian", tree = NUL
                            maxit = 500, tol.pql = 10^-6, maxit.pql = 200, verbose = FALSE, ML.init = TRUE, 
                            marginal.summ = "mean", calc.DIC = FALSE, prior = "inla.default", cpp = TRUE,
                            optimizer = c("nelder-mead-nlopt", "bobyqa", "Nelder-Mead", "subplex"), prep.s2.lme4 = FALSE,
-                           add.obs.re = TRUE, prior_alpha = 0.1, prior_mu = 1, Ntrials = NULL) {
+                           add.obs.re = TRUE, prior_alpha = 0.1, prior_mu = 1, Ntrials = NULL,
+                           save_joint = FALSE, ...) {
 
   optimizer = match.arg(optimizer)
   if ((family %nin% c("gaussian", "binomial", "poisson")) & (bayes == FALSE)){
@@ -590,7 +596,9 @@ communityPGLMM <- function(formula, data = NULL, family = "gaussian", tree = NUL
                               prior = prior, 
                               prior_alpha = prior_alpha, 
                               prior_mu = prior_mu,
-                              Ntrials = Ntrials)
+                              Ntrials = Ntrials,
+                              save_joint = save_joint,
+                              ...)
   } else {# max likelihood 
     if (family == "gaussian") {
       z <- communityPGLMM.gaussian(formula = formula, data = data, 
@@ -914,7 +922,8 @@ communityPGLMM.bayes <- function(formula, data = list(), family = "gaussian",
                                  marginal.summ = "mean", calc.DIC = FALSE, 
                                  prior = "inla.default",
                                  prior_alpha = 1, prior_mu = 0.1,
-                                 Ntrials = NULL) {
+                                 Ntrials = NULL, 
+                                 save_joint = FALSE, ...) {
   mf <- model.frame(formula = formula, data = data, na.action = NULL)
   X <- model.matrix(attr(mf, "terms"), data = mf)
   Y <- model.response(mf)
@@ -1079,11 +1088,8 @@ communityPGLMM.bayes <- function(formula, data = list(), family = "gaussian",
     }
   }
   
-  if(calc.DIC) {
-    control.compute <- list(dic = TRUE)
-  } else {
-    control.compute <- list()
-  }
+  control.compute <- list(dic = calc.DIC, config = save_joint)
+  
   
   if(family == "gaussian") {
       out <- INLA::inla(as.formula(inla_formula), data = data,
@@ -1091,7 +1097,8 @@ communityPGLMM.bayes <- function(formula, data = list(), family = "gaussian",
                         control.family = list(hyper = list(prec = list(initial = resid.init))),
                         control.fixed = list(prec.intercept = 0.0001, correlation.matrix=TRUE),
                         control.compute = control.compute,
-                        control.predictor = list(compute=TRUE))
+                        control.predictor = list(compute=TRUE),
+                        ...)
    
   } else { # other families
     
@@ -1101,7 +1108,8 @@ communityPGLMM.bayes <- function(formula, data = list(), family = "gaussian",
                         control.fixed = list(prec.intercept = 0.0001, correlation.matrix=TRUE),
                         control.compute = control.compute,
                         control.predictor=list(compute=TRUE),
-                        Ntrials = Ntrials)
+                        Ntrials = Ntrials,
+                        ...)
     
   }
   #summary(out)
