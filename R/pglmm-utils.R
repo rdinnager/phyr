@@ -1103,3 +1103,25 @@ ranef.communityPGLMM <- function(object, ...) {
   row.names(w) <- re.names
   w
 }
+
+
+#' Extract Posterior Distributions from communityPGLMM object fitted with bayes=TRUE
+#' 
+#' \code{communityPGLMM.posteriors} extracts marginal posterior distributions of the model 
+#' parameters. Only valid if the \code{communityPGLMM} was fit using \code{bayes=TRUE} option.
+#' 
+#' @rdname pglmm-posteriors
+#' @param x A fitted model with class communityPGLMM (fitted with \code{bayes=TRUE}.
+#' @export
+#' @return A nested list with marginal posterior distribution for each parameter. It has the following
+#' structure: 
+#' \describe{
+#'   \item{Hypers}{Marginal posteriors for the hyper-parameters, e.g. the variance terms for random effects}
+#'   \item{RE}{Marginal posteriors for the random effects estimates}
+#'   \item{FE}{Marginal posteriors for the fixed effects}
+#' }
+#' Within each is a list with an element for each parameter containing the marginal posterior distribution, which 
+#' is a data.frame with a column of parameter values and a column with the corresponding estimated posterior density. 
+communityPGLMM.predicted.values <- function(x) {
+  
+} 
