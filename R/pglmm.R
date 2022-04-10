@@ -100,11 +100,15 @@
 #'   Binomial data can be either presence/absence, or a two-column array of 'successes' and 'failures'. 
 #'   For both binomial  and Poisson data, we add an observation-level 
 #'   random term by default via \code{add.obs.re = TRUE}. If \code{bayes = TRUE} there are
-#'   two additional families available: "zeroinflated.binomial", and "zeroinflated.poisson",
+#'   additional families available: "zeroinflated.binomial", and "zeroinflated.poisson",
 #'   which add a zero inflation parameter; this parameter gives the probability that the response is
 #'   a zero. The rest of the parameters of the model then reflect the "non-zero" part part
 #'   of the model. Note that "zeroinflated.binomial" only makes sense for success/failure
-#'   response data.
+#'   response data. "nbinomial" and "nbinomial2" implement two different types of negative
+#'   binomial. "nbinomial" is the negative binomial parameterization typically used for
+#'   count data, and which has a dispersion parameter to model overdispersion, and which
+#'   reduces to the Poisson distribution as the dispersion parameter goes to infinity. 
+#'   "nbinomial2" is the 'pure-form' negative binomial
 #' @param cov_ranef A named list of covariance matrices of random terms. The names should be the
 #'   group variables that are used as random terms with specified covariance matrices 
 #'   (without the two underscores, e.g. \code{list(sp = tree1, site = tree2)}). The actual object 
@@ -1027,7 +1031,11 @@ communityPGLMM.bayes <- function(formula, data = list(), family = "gaussian",
     if (!is.null(B.init) & length(B.init) != p) {
       warning("B.init not correct length, so computed B.init using glm()")
     }
-    glm_bayes = glm(formula = formula, data = data, family = base_family, na.action = na.omit)
+    if(!base_family %in% c("nbinomial", "nbinomial2")) {
+      glm_bayes <- MASS::glm.nb(formula = formula)
+    } else {
+      glm_bayes <- glm(formula = formula, data = data, family = base_family, na.action = na.omit)
+    }
     if ((is.null(B.init) | (!is.null(B.init) & length(B.init) != p))) {
       B.init <- t(matrix(glm_bayes$coefficients, ncol = p))
     } else {

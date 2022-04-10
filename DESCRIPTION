@@ -32,7 +32,8 @@ Imports:
     gridExtra,
     mvtnorm,
     latticeExtra,
-    tidyr
+    tidyr,
+    MASS
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 LinkingTo:
